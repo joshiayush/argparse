@@ -33,9 +33,12 @@ package src.main.java.Argparse;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.management.InvalidAttributeValueException;
+
 import java.lang.Runtime;
 
 /**
@@ -161,8 +164,8 @@ class ArgparseOption {
             trimmedHelpString = trimmedHelpString.substring(0, 20) + "...";
         }
         return ("<ArgparseOption shortName('" + this.shortName + "'), longName('"
-                + this.longName + "'), value('" + this.value + "'), help('" + trimmedHelpString
-                + "'), optionType('" + this.optionType.toString() + "')>\n");
+                + this.longName + "'), value('" + this.value + "'), optionType('" + this.optionType.toString()
+                + "'), help('" + trimmedHelpString + "')>\n");
     }
 }
 
@@ -176,7 +179,15 @@ class Argparse {
     /** A description of the command line software at the end of the description. */
     private String epilog;
 
-    private ArrayList<ArgparseOption> options = null;
+    /**
+     * To reduce the time complexity of finding a argument using its short or long
+     * name (depending on what's given) we generate a hash code using the short or
+     * the long name (long name is preferred) then we map the option with the
+     * generated hash code. By doing this in future whenever we will need to check
+     * the other attributes of the `ArgparseOption` instance and the option name is
+     * given to us we can easily find it in constant time.
+     */
+    private Map<Integer, ArgparseOption> optionsMap = null;
 
     /**
      * We clone the system arguments in an instance variable so to later parse the
@@ -193,6 +204,9 @@ class Argparse {
      */
     public static final Logger LOGGER = Logger.getLogger(Argparse.class.toString());
 
+    /**
+     * Constructs a `Argparse` instance.
+     */
     Argparse(String[] sysargs, String progname, String usage, String description, String epilog) {
         if (progname == null || progname.isEmpty()) {
             this.progname = new File(sysargs[0]).getName();
@@ -203,14 +217,27 @@ class Argparse {
         this.sysargs = sysargs.clone();
     }
 
-    public void addArgument(final ArgparseOption argparseOption) {
-        this.options.add(argparseOption);
+    /**
+     * Adds an argument to the `optionsMap`. The argument is mapped to a hash code
+     * generated from short or long name (depending upon what is given; long name is
+     * preferred).
+     */
+    public void addArgument(final ArgparseOption argparseOption) throws InvalidAttributeValueException {
+        if ((argparseOption.shortName == null || argparseOption.shortName.isEmpty())
+                && (argparseOption.longName == null || argparseOption.longName.isEmpty())) {
+            throw new InvalidAttributeValueException(
+                    "Both argparseOption.shortName and argparseOption.longName can't be empty.\n" +
+                            "You have to provide at least one of these.\n");
+        }
+        this.optionsMap.put(argparseOption.longName != null || !argparseOption.longName.isEmpty()
+                ? argparseOption.longName.hashCode()
+                : argparseOption.shortName.hashCode(), argparseOption);
     }
 
     private String formatUsage() {
         final int terminalWidth = OsUtils.getTerminalWidth();
         String formattedOptionsString = "";
-        for (final ArgparseOption option : this.options) {
+        for (final ArgparseOption option : this.optionsMap.values()) {
             if ((option.shortName == null || option.shortName.isEmpty())
                     && (option.longName == null || option.longName.isEmpty()))
                 continue;
@@ -225,7 +252,7 @@ class Argparse {
         formattedUsageString += "Usage: " + this.progname + " " + formattedOptionsString + "\n";
         formattedUsageString += "\n";
         int indentWidth = 4;
-        for (final ArgparseOption option : options) {
+        for (final ArgparseOption option : this.optionsMap.values()) {
             if ((option.shortName == null || option.shortName.isEmpty())
                     && (option.longName == null || option.longName.isEmpty()))
                 continue;
