@@ -176,7 +176,17 @@ class Argparse {
     /** A description of the command line software at the end of the description. */
     private String epilog;
 
-    private ArrayList<ArgparseOption> options;
+    private ArrayList<ArgparseOption> options = null;
+
+    /**
+     * We clone the system arguments in an instance variable so to later parse the
+     * system arguments in a argument-to-value map.
+     *
+     * Note that we are not creating just another reference of the `sysargs` that we
+     * get in our constructor but we are actually cloning so that changing the
+     * former one will not reflect any changes in the later one.
+     */
+    private String[] sysargs = null;
 
     /**
      * Logger for class `Argparse`. Instantiate with the name of the class.
@@ -190,10 +200,11 @@ class Argparse {
         this.usage = usage;
         this.description = description;
         this.epilog = epilog;
+        this.sysargs = sysargs.clone();
     }
 
     public void addArgument(final ArgparseOption argparseOption) {
-        options.add(argparseOption);
+        this.options.add(argparseOption);
     }
 
     private String formatUsage() {
