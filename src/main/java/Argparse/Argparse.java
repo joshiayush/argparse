@@ -47,6 +47,14 @@ final class OsUtils {
     private static String OS = null;
 
     /**
+     * Command to obtain the column size of a terminal in a Linux machine.
+     * 
+     * @TODO: Also handle the case when the library is running on Windows, and MacOS
+     *        machines.
+     */
+    private static final String LINUX_TERMINAL_COL_WIDTH_CMD = "tput cols";
+
+    /**
      * Returns the name of the Operating System.
      */
     public static String getOsName() {
@@ -84,6 +92,33 @@ final class OsUtils {
     public static boolean isSolaris() {
         return getOsName().toLowerCase().indexOf("sunos") >= 0;
     }
+
+    /**
+     * getTerminalWidth() returns the number of columns present in the terminal
+     * open.
+     * 
+     * This function is only supported in Linux and returns `-1` when used in MacOs,
+     * or Windows.
+     */
+    public static int getTerminalWidth() {
+        /**
+         * @TODO: Make this function compatible with MacOS and Windows.
+         */
+        if (!OsUtils.isUnix())
+            return -1;
+        try {
+            /**
+             * Note, we don't use `ProcessBuilder` because it internally uses `ForkAndExec`
+             * which in turns makes the copy of the entire parents address space, so that
+             * even a little command can lead to `OutOfMemoryErrors`, when the parent
+             * process has big amount of memory acquired.
+             */
+            return Integer.parseInt(Runtime.getRuntime().exec(OsUtils.LINUX_TERMINAL_COL_WIDTH_CMD).toString());
+        } catch (IOException | NumberFormatException e) {
+            Argparse.LOGGER.log(Level.WARNING, e.getMessage());
+            return -1;
+        }
+    }
 }
 
 enum ArgparseOptionType {
@@ -110,6 +145,25 @@ class ArgparseOption {
         this.optionType = optionType;
         this.help = help;
     }
+
+    /**
+     * Returns a formatted string of `ArgparseOption` object.
+     * 
+     * Good for debugging purposes.
+     */
+    public String toString() {
+        String trimmedHelpString = this.help;
+        /**
+         * Trim the help string for a `Argparse` option so to avoid overloading the
+         * terminal with characters when debugging.
+         */
+        if (trimmedHelpString.length() > 23) {
+            trimmedHelpString = trimmedHelpString.substring(0, 20) + "...";
+        }
+        return ("<ArgparseOption shortName('" + this.shortName + "'), longName('"
+                + this.longName + "'), value('" + this.value + "'), help('" + trimmedHelpString
+                + "'), optionType('" + this.optionType.toString() + "')>\n");
+    }
 }
 
 class Argparse {
@@ -125,21 +179,14 @@ class Argparse {
     private ArrayList<ArgparseOption> options;
 
     /**
-     * Command to obtain the column size of a terminal in a Linux machine.
-     * 
-     * @TODO: Also handle the case when the library is running on Windows, and MacOS
-     *        machines.
-     */
-    private static final String LINUX_TERMINAL_COL_WIDTH_CMD = "tput cols";
-
-    /**
      * Logger for class `Argparse`. Instantiate with the name of the class.
      */
-    private static final Logger LOGGER = Logger.getLogger(Argparse.class.toString());
+    public static final Logger LOGGER = Logger.getLogger(Argparse.class.toString());
 
     Argparse(String[] sysargs, String progname, String usage, String description, String epilog) {
-        if (progname == null || progname.isEmpty())
+        if (progname == null || progname.isEmpty()) {
             this.progname = new File(sysargs[0]).getName();
+        }
         this.usage = usage;
         this.description = description;
         this.epilog = epilog;
@@ -149,35 +196,8 @@ class Argparse {
         options.add(argparseOption);
     }
 
-    /**
-     * getTerminalWidth() returns the number of columns present in the terminal
-     * open.
-     * 
-     * This function is only supported in Linux and returns `-1` when used in MacOs,
-     * or Windows.
-     */
-    private static int getTerminalWidth() {
-        /**
-         * @TODO: Make this function compatible with MacOS and Windows.
-         */
-        if (!OsUtils.isUnix())
-            return -1;
-        try {
-            /**
-             * Note, we don't use `ProcessBuilder` because it internally uses `ForkAndExec`
-             * which in turns makes the copy of the entire parents address space, so that
-             * even a little command can lead to `OutOfMemoryErrors`, when the parent
-             * process has big amount of memory acquired.
-             */
-            return Integer.parseInt(Runtime.getRuntime().exec(Argparse.LINUX_TERMINAL_COL_WIDTH_CMD).toString());
-        } catch (IOException | NumberFormatException e) {
-            Argparse.LOGGER.log(Level.WARNING, e.getMessage());
-            return -1;
-        }
-    }
-
     private String formatUsage() {
-        final int terminalWidth = Argparse.getTerminalWidth();
+        final int terminalWidth = OsUtils.getTerminalWidth();
         String formattedOptionsString = "";
         for (final ArgparseOption option : this.options) {
             if ((option.shortName == null || option.shortName.isEmpty())
@@ -219,17 +239,7 @@ class Argparse {
      * Good for debugging purposes.
      */
     private static void printMessage(final ArgparseOption argparseOption) {
-        String trimmedHelpString = argparseOption.help;
-        /**
-         * Trim the help string for a `Argparse` option so to avoid overloading the
-         * terminal with characters when debugging.
-         */
-        if (trimmedHelpString.length() > 23) {
-            trimmedHelpString = trimmedHelpString.substring(0, 20) + "...";
-        }
-        Argparse.printMessage("<ArgparseOption shortName('" + argparseOption.shortName + "'), longName('"
-                + argparseOption.longName + "'), value('" + argparseOption.value + "'), help('" + trimmedHelpString
-                + "'), optionType('" + argparseOption.optionType.toString() + "')>\n");
+        Argparse.printMessage(argparseOption.toString());
     }
 
     /**
@@ -239,7 +249,7 @@ class Argparse {
      * We don't provide an overload for integer or float values so use
      * `String.format()` function to pass string with integer or float values.
      */
-    private static void printMessage(final String message) {
+    public static void printMessage(final String message) {
         System.out.print(message);
     }
 
