@@ -204,6 +204,9 @@ class Argparse {
      */
     public static final Logger LOGGER = Logger.getLogger(Argparse.class.toString());
 
+    /** We don't support formatted output below this terminal width. */
+    private static final int DEFAULT_TERMINAL_WIDTH = 80;
+
     /**
      * Constructs a `Argparse` instance.
      */
@@ -235,7 +238,13 @@ class Argparse {
     }
 
     private String formatUsage() {
-        final int terminalWidth = OsUtils.getTerminalWidth();
+        int terminalWidth = OsUtils.getTerminalWidth();
+        if (terminalWidth < Argparse.DEFAULT_TERMINAL_WIDTH)
+            terminalWidth = Argparse.DEFAULT_TERMINAL_WIDTH;
+
+        int usagePrognameSpace = "Usage: ".length() + this.progname.length() + 1;
+        int formattedOptionsStringSpace = terminalWidth - usagePrognameSpace;
+        int formattedOptionsStringCounter = 0;
         String formattedOptionsString = "";
         for (final ArgparseOption option : this.optionsMap.values()) {
             if ((option.shortName == null || option.shortName.isEmpty())
@@ -247,7 +256,25 @@ class Argparse {
             if (option.longName != null && !option.longName.isEmpty())
                 formattedOptionsString += option.longName;
             formattedOptionsString += "]";
+
+            /**
+             * Keep a track of the number of characters written so far in our
+             * `formattedOptionsString`. This helps us keep the formatted options string
+             * inside the bound of our terminal width.
+             */
+            formattedOptionsStringCounter = formattedOptionsStringCounter
+                    + (formattedOptionsString.length() - formattedOptionsStringCounter);
+            if (formattedOptionsStringCounter >= formattedOptionsStringSpace) {
+                /**
+                 * We double the `formattedOptionsStringSpace` to keep a logical distance with
+                 * `formattedOptionsStringCounter`.
+                 */
+                formattedOptionsStringSpace *= 2;
+                /** Give a left padding to our data. */
+                formattedOptionsString += "\n" + new String(new char[usagePrognameSpace]).replace("\0", " ");
+            }
         }
+
         String formattedUsageString = "";
         formattedUsageString += "Usage: " + this.progname + " " + formattedOptionsString + "\n";
         formattedUsageString += "\n";
