@@ -245,16 +245,30 @@ class Argparse {
         int usagePrognameSpace = "Usage: ".length() + this.progname.length() + 1;
         int formattedOptionsStringSpace = terminalWidth - usagePrognameSpace;
         int formattedOptionsStringCounter = 0;
+
+        String formattedOptionsGroupString = "(";
+        for (final ArgparseOption option : this.optionsMap.values()) {
+            if (option.optionType != ArgparseOptionType.ARGPARSE_OPT_GROUP)
+                continue;
+            if (option.shortName != null && !option.shortName.isEmpty()) {
+                formattedOptionsGroupString += option.shortName + "|";
+            } else {
+                formattedOptionsGroupString += option.longName;
+            }
+        }
+        /** Remove the trailing '|'. */
+        formattedOptionsGroupString = formattedOptionsGroupString.substring(0,
+                formattedOptionsGroupString.length() - 1);
+        formattedOptionsGroupString += ")";
+
         String formattedOptionsString = "";
         for (final ArgparseOption option : this.optionsMap.values()) {
-            if ((option.shortName == null || option.shortName.isEmpty())
-                    && (option.longName == null || option.longName.isEmpty()))
-                continue;
             formattedOptionsString += "[";
-            if (option.shortName != null && !option.shortName.isEmpty())
-                formattedOptionsString += option.shortName + "|";
-            if (option.longName != null && !option.longName.isEmpty())
+            if (option.shortName != null && !option.shortName.isEmpty()) {
+                formattedOptionsString += option.shortName;
+            } else {
                 formattedOptionsString += option.longName;
+            }
             formattedOptionsString += "]";
 
             /**
@@ -274,6 +288,8 @@ class Argparse {
                 formattedOptionsString += "\n" + new String(new char[usagePrognameSpace]).replace("\0", " ");
             }
         }
+        /** Now add the group. */
+        formattedOptionsString += formattedOptionsGroupString;
 
         String formattedUsageString = "";
         formattedUsageString += "Usage: " + this.progname + " " + formattedOptionsString + "\n";
