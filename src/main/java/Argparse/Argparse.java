@@ -125,7 +125,6 @@ final class OsUtils {
 }
 
 enum ArgparseOptionType {
-    ARGPARSE_OPT_END,
     ARGPARSE_OPT_GROUP,
     ARGPARSE_OPT_BOOLEAN,
     ARGPARSE_OPT_BIT,
@@ -135,13 +134,27 @@ enum ArgparseOptionType {
 }
 
 class ArgparseOption {
+    private static final String DEFAULT_PREFIX = "--";
+    public String prefix;
     public String shortName;
     public String longName;
     public String value;
     public String help;
     public ArgparseOptionType optionType;
 
-    public ArgparseOption(String shortName, String longName, String value, ArgparseOptionType optionType, String help) {
+    public ArgparseOption(String shortName, String longName, String value,
+            ArgparseOptionType optionType, String help) {
+        this.prefix = ArgparseOption.DEFAULT_PREFIX;
+        this.shortName = shortName;
+        this.longName = longName;
+        this.value = value;
+        this.optionType = optionType;
+        this.help = help;
+    }
+
+    public ArgparseOption(String prefix, String shortName, String longName, String value,
+            ArgparseOptionType optionType, String help) {
+        this.prefix = prefix;
         this.shortName = shortName;
         this.longName = longName;
         this.value = value;
@@ -251,9 +264,9 @@ class Argparse {
             if (option.optionType != ArgparseOptionType.ARGPARSE_OPT_GROUP)
                 continue;
             if (option.shortName != null && !option.shortName.isEmpty()) {
-                formattedOptionsGroupString += option.shortName + "|";
+                formattedOptionsGroupString += String.format("%c%s|", option.prefix.charAt(0), option.shortName);
             } else {
-                formattedOptionsGroupString += option.longName;
+                formattedOptionsGroupString += option.prefix + option.longName + "|";
             }
         }
         /** Remove the trailing '|'. */
@@ -265,9 +278,9 @@ class Argparse {
         for (final ArgparseOption option : this.optionsMap.values()) {
             formattedOptionsString += "[";
             if (option.shortName != null && !option.shortName.isEmpty()) {
-                formattedOptionsString += option.shortName;
+                formattedOptionsString += String.format("%c%s", option.prefix.charAt(0), option.shortName);
             } else {
-                formattedOptionsString += option.longName;
+                formattedOptionsString += option.prefix + option.longName;
             }
             formattedOptionsString += "]";
 
@@ -294,20 +307,36 @@ class Argparse {
         String formattedUsageString = "";
         formattedUsageString += "Usage: " + this.progname + " " + formattedOptionsString + "\n";
         formattedUsageString += "\n";
-        int indentWidth = 4;
         for (final ArgparseOption option : this.optionsMap.values()) {
-            if ((option.shortName == null || option.shortName.isEmpty())
-                    && (option.longName == null || option.longName.isEmpty()))
-                continue;
-            for (int i = 0; i < indentWidth; ++i)
-                formattedUsageString += " ";
-            if (option.shortName != null && !option.shortName.isEmpty())
-                formattedUsageString += option.shortName;
-            if (option.longName != null && !option.longName.isEmpty())
-                formattedUsageString += ", " + option.longName;
+            int pad = 4;
+            formattedUsageString += new String(new char[pad]).replace("\0", " ");
+            if (option.shortName != null && !option.shortName.isEmpty()) {
+                formattedUsageString += String.format("%c%s", option.prefix.charAt(0), option.shortName);
+            }
+            if (option.longName != null && !option.longName.isEmpty()) {
+                formattedUsageString += ", " + option.prefix + option.longName;
+            }
+            switch (option.optionType) {
+                case ARGPARSE_OPT_INTEGER:
+                    formattedUsageString += "=<INT>";
+                    break;
+                case ARGPARSE_OPT_FLOAT:
+                    formattedUsageString += "=<FLOAT>";
+                    break;
+                case ARGPARSE_OPT_BOOLEAN:
+                    formattedUsageString += "=<BOOL>";
+                    break;
+                case ARGPARSE_OPT_STRING:
+                    formattedUsageString += "=<STRING>";
+                    break;
+                case ARGPARSE_OPT_BIT:
+                    formattedUsageString += "=<BIT>";
+                    break;
+                case ARGPARSE_OPT_GROUP:
+                    break;
+            }
             if (option.help != null && !option.help.isEmpty()) {
-                for (int i = 0; i < indentWidth; ++i)
-                    formattedUsageString += " ";
+                formattedUsageString += new String(new char[pad]).replace("\0", " ");
                 formattedUsageString += option.help;
             }
         }
