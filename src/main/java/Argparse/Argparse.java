@@ -308,36 +308,46 @@ class Argparse {
         formattedUsageString += "Usage: " + this.progname + " " + formattedOptionsString + "\n";
         formattedUsageString += "\n";
         for (final ArgparseOption option : this.optionsMap.values()) {
-            int pad = 4;
-            formattedUsageString += new String(new char[pad]).replace("\0", " ");
+            /** Initial padding before every arugment usage line. */
+            int initialpad = 4;
+            formattedUsageString += new String(new char[initialpad]).replace("\0", " ");
+            String optionUsage = "";
             if (option.shortName != null && !option.shortName.isEmpty()) {
-                formattedUsageString += String.format("%c%s", option.prefix.charAt(0), option.shortName);
+                optionUsage += String.format("%c%s", option.prefix.charAt(0), option.shortName);
             }
             if (option.longName != null && !option.longName.isEmpty()) {
-                formattedUsageString += ", " + option.prefix + option.longName;
+                optionUsage += ", " + option.prefix + option.longName;
             }
             switch (option.optionType) {
                 case ARGPARSE_OPT_INTEGER:
-                    formattedUsageString += "=<INT>";
+                    optionUsage += "=<INT>";
                     break;
                 case ARGPARSE_OPT_FLOAT:
-                    formattedUsageString += "=<FLOAT>";
+                    optionUsage += "=<FLOAT>";
                     break;
                 case ARGPARSE_OPT_BOOLEAN:
-                    formattedUsageString += "=<BOOL>";
+                    optionUsage += "=<BOOL>";
                     break;
                 case ARGPARSE_OPT_STRING:
-                    formattedUsageString += "=<STRING>";
+                    optionUsage += "=<STRING>";
                     break;
                 case ARGPARSE_OPT_BIT:
-                    formattedUsageString += "=<BIT>";
+                    optionUsage += "=<BIT>";
                     break;
                 case ARGPARSE_OPT_GROUP:
                     break;
             }
             if (option.help != null && !option.help.isEmpty()) {
-                formattedUsageString += new String(new char[pad]).replace("\0", " ");
-                formattedUsageString += option.help;
+                /**
+                 * Format the per line usage of a arugment. We create fixed width strings
+                 * irrespective of the length of the `optionUsage` and `option.help` this gives
+                 * us a clear visiblity of what the argument is and what it does.
+                 */
+                formattedUsageString += String.format(
+                        "%1$" + optionUsage.length() + "s %2$"
+                                + (terminalWidth - (optionUsage.length() + initialpad + 1))
+                                + "s",
+                        optionUsage, option.help);
             }
         }
         return formattedUsageString;
