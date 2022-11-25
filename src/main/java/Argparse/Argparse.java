@@ -1,5 +1,5 @@
 /**
- * Copyright 2021, argparse Inc.
+ * Copyright 2022, argparse Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -133,8 +133,13 @@ enum ArgparseOptionType {
     ARGPARSE_OPT_STRING,
 }
 
+/**
+ * Creates a parser option.
+ */
 class ArgparseOption {
+    /** Most programs use this prefix. */
     private static final String DEFAULT_PREFIX = "--";
+
     public String prefix;
     public String shortName;
     public String longName;
@@ -142,6 +147,10 @@ class ArgparseOption {
     public String help;
     public ArgparseOptionType optionType;
 
+    /**
+     * Initializes an `ArgparseOption` instance with the default prefix and the user
+     * given values.
+     */
     public ArgparseOption(String shortName, String longName, String value,
             ArgparseOptionType optionType, String help) {
         this.prefix = ArgparseOption.DEFAULT_PREFIX;
@@ -152,6 +161,9 @@ class ArgparseOption {
         this.help = help;
     }
 
+    /**
+     * Initializes an `ArgparseOption` instance with the user given values.
+     */
     public ArgparseOption(String prefix, String shortName, String longName, String value,
             ArgparseOptionType optionType, String help) {
         this.prefix = prefix;
@@ -250,6 +262,11 @@ class Argparse {
                 : argparseOption.shortName.hashCode(), argparseOption);
     }
 
+    /**
+     * Auto generates the usage for a parser. The main benefit of having this
+     * functions is that the user does not need to provide explicit usage string
+     * (s)he only has to provide the arguments and their respective attributes.
+     */
     private String formatUsage() {
         int terminalWidth = OsUtils.getTerminalWidth();
         if (terminalWidth < Argparse.DEFAULT_TERMINAL_WIDTH)
@@ -339,16 +356,17 @@ class Argparse {
             }
             if (option.help != null && !option.help.isEmpty()) {
                 /**
-                 * Format the per line usage of a arugment. We create fixed width strings
-                 * irrespective of the length of the `optionUsage` and `option.help` this gives
-                 * us a clear visiblity of what the argument is and what it does.
+                 * Format the per line usage of a arugment.
+                 * 
+                 * -a, --argument
+                 * Help text for the argument.
                  */
-                formattedUsageString += String.format(
-                        "%1$" + optionUsage.length() + "s %2$"
-                                + (terminalWidth - (optionUsage.length() + initialpad + 1))
-                                + "s",
-                        optionUsage, option.help);
+                formattedUsageString += optionUsage;
+                formattedUsageString += "\n";
+                formattedUsageString += new String(new char[initialpad << 2]).replace("\0", " ");
+                formattedUsageString += option.help;
             }
+            formattedUsageString += "\n";
         }
         return formattedUsageString;
     }
@@ -388,5 +406,33 @@ class Argparse {
         if (!this.epilog.isEmpty()) {
             Argparse.printMessage(this.epilog);
         }
+    }
+
+    /**
+     * Exits the program and releases the resources.
+     */
+    public void exit() {
+        /** Release the resources that we acquire in our logger. */
+        System.exit(0);
+    }
+
+    /**
+     * Exits the program and releases the resources.
+     */
+    public void exit(final int status, final String message) {
+        if (message != null && !message.isEmpty()) {
+            Argparse.printMessage(message);
+        }
+        /** Release the resources that we acquire in our logger. */
+        System.exit(status);
+    }
+
+    /**
+     * Prints the given message and exits with error code 2 (invalid usage of some
+     * shell built-in command).
+     */
+    public void error(final String message) {
+        this.printUsage();
+        this.exit(2, this.progname + ": error: " + message + "\n");
     }
 }
