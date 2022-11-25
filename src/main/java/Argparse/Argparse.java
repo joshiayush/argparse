@@ -29,7 +29,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package src.main.java.Argparse;
+package Argparse;
 
 /**
  * Command-line parsing library.
@@ -46,10 +46,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.management.InvalidAttributeValueException;
-
-import src.main.java.Argparse.OsUtils;
-import src.main.java.Argparse.ArgparseOption;
-import src.main.java.Argparse.ArgparseOptionType;
 
 class Argparse {
   private String progname;

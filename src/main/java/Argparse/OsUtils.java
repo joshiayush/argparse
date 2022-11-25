@@ -29,7 +29,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package src.main.java.Argparse;
+package Argparse;
 
 import java.io.IOException;
 

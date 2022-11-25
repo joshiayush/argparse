@@ -29,16 +29,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package src.main.java.Argparse;
-
-enum ArgparseOptionType {
-  ARGPARSE_OPT_GROUP,
-  ARGPARSE_OPT_BOOLEAN,
-  ARGPARSE_OPT_BIT,
-  ARGPARSE_OPT_INTEGER,
-  ARGPARSE_OPT_FLOAT,
-  ARGPARSE_OPT_STRING,
-}
+package Argparse;
 
 /**
  * Creates a parser option.
