@@ -144,33 +144,56 @@ class ArgparseOption {
     public String shortName;
     public String longName;
     public String value;
+    public String defaultValue;
     public String help;
     public ArgparseOptionType optionType;
+
+    /**
+     * Flag to check if the option instance must have an explicit value provided
+     * over the command line.
+     */
+    public boolean isValueRequired = false;
 
     /**
      * Initializes an `ArgparseOption` instance with the default prefix and the user
      * given values.
      */
-    public ArgparseOption(String shortName, String longName, String value,
-            ArgparseOptionType optionType, String help) {
+    public ArgparseOption(String shortName, String longName,
+            ArgparseOptionType optionType, String value, String defaultValue, String help) {
         this.prefix = ArgparseOption.DEFAULT_PREFIX;
         this.shortName = shortName;
         this.longName = longName;
-        this.value = value;
         this.optionType = optionType;
+        this.value = value;
+        this.defaultValue = defaultValue;
+
+        /**
+         * Boolean options are considered to have a value of true if present over the
+         * command line, false otherwise.
+         */
+        if (this.optionType != ArgparseOptionType.ARGPARSE_OPT_BOOLEAN && this.defaultValue == null)
+            this.isValueRequired = true;
         this.help = help;
     }
 
     /**
      * Initializes an `ArgparseOption` instance with the user given values.
      */
-    public ArgparseOption(String prefix, String shortName, String longName, String value,
-            ArgparseOptionType optionType, String help) {
+    public ArgparseOption(String prefix, String shortName, String longName,
+            ArgparseOptionType optionType, String value, String defaultValue, String help) {
         this.prefix = prefix;
         this.shortName = shortName;
         this.longName = longName;
-        this.value = value;
         this.optionType = optionType;
+        this.value = value;
+        this.defaultValue = defaultValue;
+
+        /**
+         * Boolean options are considered to have a value of true if present over the
+         * command line, false otherwise.
+         */
+        if (this.optionType != ArgparseOptionType.ARGPARSE_OPT_BOOLEAN && this.defaultValue == null)
+            this.isValueRequired = true;
         this.help = help;
     }
 
