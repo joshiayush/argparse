@@ -1,2 +1,5 @@
 # IDE configuration files and directories.
 .vscode
+
+# Maven build directories
+target
