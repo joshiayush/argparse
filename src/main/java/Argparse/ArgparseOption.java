@@ -111,6 +111,6 @@ public class ArgparseOption {
     }
     return ("<ArgparseOption shortName('" + this.shortName + "'), longName('"
         + this.longName + "'), value('" + this.value + "'), optionType('" + this.optionType.toString()
-        + "'), help('" + trimmedHelpString + "')>\n");
+        + "'), help('" + trimmedHelpString + "')>");
   }
 }

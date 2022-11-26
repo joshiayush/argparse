@@ -37,9 +37,54 @@ import org.junit.Test;
 public class TestArgparseOption {
   @Test
   public void testInstanceWithDefaultOptionPrefix() {
-    final ArgparseOption option = new ArgparseOption("o", "option", ArgparseOptionType.ARGPARSE_OPT_BOOLEAN, null,
-        "false", "Option argument.");
+    final ArgparseOption option = new ArgparseOption("f", "foo", ArgparseOptionType.ARGPARSE_OPT_BOOLEAN, null,
+        "false", "Help text.");
 
     assertEquals(option.prefix, "--");
+  }
+
+  @Test
+  public void testInstanceWithExplicitOptionPrefix() {
+    final ArgparseOption option = new ArgparseOption("~~", "f", "foo", ArgparseOptionType.ARGPARSE_OPT_BOOLEAN, null,
+        "false", "Help text.");
+
+    assertEquals(option.prefix, "~~");
+  }
+
+  @Test
+  public void testAttributeIsValueRequired() {
+    for (final ArgparseOptionType optionType : ArgparseOptionType.values()) {
+      final ArgparseOption option = new ArgparseOption("f", "foo", optionType, null,
+          null, "Help text.");
+
+      if (optionType == ArgparseOptionType.ARGPARSE_OPT_BOOLEAN) {
+        assertFalse("Attribute 'isValueRequired' is supposed to be false for 'ARGPARSE_OPT_BOOLEAN' types.",
+            option.isValueRequired);
+      } else {
+        assertTrue("Attribute 'isValueRequired' is supposed to be true for '" + optionType.toString() + "' types.",
+            option.isValueRequired);
+      }
+    }
+  }
+
+  @Test
+  public void testMethodToString() {
+    final ArgparseOption option = new ArgparseOption("f", "foo", ArgparseOptionType.ARGPARSE_OPT_BOOLEAN, null,
+        "false", "Help text.");
+
+    final String optionStringified = "<ArgparseOption shortName('f'), longName('foo'), value('null'), optionType('ARGPARSE_OPT_BOOLEAN'), help('Help text.')>";
+
+    assertEquals(option.toString(), optionStringified);
+  }
+
+  @Test
+  public void testMethodToStringWithALongHelpText() {
+    final ArgparseOption option = new ArgparseOption("f", "foo", ArgparseOptionType.ARGPARSE_OPT_BOOLEAN, null,
+        "false",
+        "This help text is written so lengthy just because we want to test if our toString() function even trims out the content after the specific length given to it or not.");
+
+    final String optionStringified = "<ArgparseOption shortName('f'), longName('foo'), value('null'), optionType('ARGPARSE_OPT_BOOLEAN'), help('This help text is wr...')>";
+
+    assertEquals(option.toString(), optionStringified);
   }
 }
