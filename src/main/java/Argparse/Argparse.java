@@ -91,6 +91,9 @@ class Argparse {
   Argparse(String[] sysargs, String progname, String usage, String description, String epilog) {
     if (progname == null || progname.isEmpty()) {
       this.progname = new File(sysargs[0]).getName();
+      if (this.progname.indexOf(".") > -1) {
+        this.progname = this.progname.substring(0, this.progname.lastIndexOf("."));
+      }
     }
     this.usage = usage;
     this.description = description;
@@ -254,10 +257,10 @@ class Argparse {
     }
     Argparse.printMessage(String.format("%s%s", this.usage, "\n"));
     if (!this.description.isEmpty()) {
-      Argparse.printMessage(this.description);
+      Argparse.printMessage("\n" + this.description);
     }
     if (!this.epilog.isEmpty()) {
-      Argparse.printMessage(this.epilog);
+      Argparse.printMessage("\n" + this.epilog);
     }
   }
 
