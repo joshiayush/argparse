@@ -42,6 +42,7 @@ package Argparse;
 
 import java.io.File;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -99,6 +100,8 @@ class Argparse {
     this.description = description;
     this.epilog = epilog;
     this.sysargs = sysargs.clone();
+
+    this.optionsMap = new HashMap<Integer, ArgparseOption>();
   }
 
   /**
@@ -132,20 +135,31 @@ class Argparse {
     int formattedOptionsStringSpace = terminalWidth - usagePrognameSpace;
     int formattedOptionsStringCounter = 0;
 
-    String formattedOptionsGroupString = "(";
+    boolean isGroupPresent = false;
     for (final ArgparseOption option : this.optionsMap.values()) {
-      if (option.optionType != ArgparseOptionType.ARGPARSE_OPT_GROUP)
-        continue;
-      if (option.shortName != null && !option.shortName.isEmpty()) {
-        formattedOptionsGroupString += String.format("%c%s|", option.prefix.charAt(0), option.shortName);
-      } else {
-        formattedOptionsGroupString += option.prefix + option.longName + "|";
+      if (option.optionType == ArgparseOptionType.ARGPARSE_OPT_GROUP) {
+        isGroupPresent = true;
+        break;
       }
     }
-    /** Remove the trailing '|'. */
-    formattedOptionsGroupString = formattedOptionsGroupString.substring(0,
-        formattedOptionsGroupString.length() - 1);
-    formattedOptionsGroupString += ")";
+
+    String formattedOptionsGroupString = "";
+    if (isGroupPresent) {
+      formattedOptionsGroupString = "(";
+      for (final ArgparseOption option : this.optionsMap.values()) {
+        if (option.optionType != ArgparseOptionType.ARGPARSE_OPT_GROUP)
+          continue;
+        if (option.shortName != null && !option.shortName.isEmpty()) {
+          formattedOptionsGroupString += String.format("%c%s|", option.prefix.charAt(0), option.shortName);
+        } else {
+          formattedOptionsGroupString += option.prefix + option.longName + "|";
+        }
+      }
+      /** Remove the trailing '|'. */
+      formattedOptionsGroupString = formattedOptionsGroupString.substring(0,
+          formattedOptionsGroupString.length() - 1);
+      formattedOptionsGroupString += ")";
+    }
 
     String formattedOptionsString = "";
     for (final ArgparseOption option : this.optionsMap.values()) {
@@ -252,14 +266,14 @@ class Argparse {
    * and 'epilog' if given during initialization of the parser.
    */
   public void printUsage() {
-    if (this.usage == null) {
+    if (this.usage == null || this.usage.isEmpty()) {
       this.usage = this.formatUsage();
     }
     Argparse.printMessage(String.format("%s%s", this.usage, "\n"));
-    if (!this.description.isEmpty()) {
+    if (this.description != null && !this.description.isEmpty()) {
       Argparse.printMessage("\n" + this.description);
     }
-    if (!this.epilog.isEmpty()) {
+    if (this.epilog != null && !this.epilog.isEmpty()) {
       Argparse.printMessage("\n" + this.epilog);
     }
   }
