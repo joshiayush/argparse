@@ -103,4 +103,99 @@ public class TestArgparse {
 
     assertEquals(expectedProgramUsage, capturedStdout);
   }
+
+  @Test
+  public void testPrintUsageMethodWhenDescriptionIsNotEmpty() {
+    String programDescription = "argparse version 1.0.0\n";
+    programDescription += "Post bug reports here at https://github.com/joshiayush/argparse/issues/new";
+
+    final Argparse parser = new Argparse(new String[] { "./foo.exe", "foo" }, null, "", programDescription, "");
+
+    try {
+      parser.addArgument(
+          new ArgparseOption("f", "foo", ArgparseOptionType.ARGPARSE_OPT_BOOLEAN, null, "false", "Help text for foo."));
+    } catch (InvalidAttributeValueException exc) {
+      System.err.println(exc.toString());
+    }
+
+    final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+    System.setOut(new PrintStream(outStream));
+
+    parser.printUsage();
+
+    System.setOut(null);
+    final String capturedStdout = outStream.toString();
+
+    final int initialpad = 4;
+    String expectedProgramUsage = "Usage: foo [-f]\n";
+    expectedProgramUsage += "\n";
+    expectedProgramUsage += new String(new char[initialpad]).replace("\0", " ");
+    expectedProgramUsage += "-f, --foo=<BOOL>\n";
+    expectedProgramUsage += new String(new char[initialpad << 2]).replace("\0", " ");
+    expectedProgramUsage += "Help text for foo.";
+
+    /**
+     * Three extra new-line characters for the trailing end-of-line character
+     * appended by the `printUsage()` function at the end of the usage and the
+     * `formatUsage()` function at the end of every option string and the
+     * end-of-line character before printing the description in `printUsage()`
+     * function.
+     */
+    expectedProgramUsage += "\n\n\n";
+    expectedProgramUsage += programDescription;
+    expectedProgramUsage += "\n";
+
+    assertEquals(expectedProgramUsage, capturedStdout);
+  }
+
+  @Test
+  public void testPrintUsageMethodWhenDescriptionAndEpilogIsNotEmpty() {
+    String programDescription = "argparse version 1.0.0\n";
+    programDescription += "Post bug reports here at https://github.com/joshiayush/argparse/issues/new";
+
+    String programEpilog = "Every command line tool has a parser behind it.";
+
+    final Argparse parser = new Argparse(new String[] { "./foo.exe", "foo" }, null, "", programDescription,
+        programEpilog);
+
+    try {
+      parser.addArgument(
+          new ArgparseOption("f", "foo", ArgparseOptionType.ARGPARSE_OPT_BOOLEAN, null, "false", "Help text for foo."));
+    } catch (InvalidAttributeValueException exc) {
+      System.err.println(exc.toString());
+    }
+
+    final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+    System.setOut(new PrintStream(outStream));
+
+    parser.printUsage();
+
+    System.setOut(null);
+    final String capturedStdout = outStream.toString();
+
+    final int initialpad = 4;
+    String expectedProgramUsage = "Usage: foo [-f]\n";
+    expectedProgramUsage += "\n";
+    expectedProgramUsage += new String(new char[initialpad]).replace("\0", " ");
+    expectedProgramUsage += "-f, --foo=<BOOL>\n";
+    expectedProgramUsage += new String(new char[initialpad << 2]).replace("\0", " ");
+    expectedProgramUsage += "Help text for foo.";
+
+    /**
+     * Three extra new-line characters for the trailing end-of-line character
+     * appended by the `printUsage()` function at the end of the usage and the
+     * `formatUsage()` function at the end of every option string and the
+     * end-of-line character before printing the description in `printUsage()`
+     * function.
+     */
+    expectedProgramUsage += "\n\n\n";
+    expectedProgramUsage += programDescription;
+    expectedProgramUsage += "\n";
+
+    expectedProgramUsage += "\n";
+    expectedProgramUsage += programEpilog;
+    expectedProgramUsage += "\n";
+
+    assertEquals(expectedProgramUsage, capturedStdout);
+  }
 }

@@ -271,10 +271,10 @@ class Argparse {
     }
     Argparse.printMessage(String.format("%s%s", this.usage, "\n"));
     if (this.description != null && !this.description.isEmpty()) {
-      Argparse.printMessage("\n" + this.description);
+      Argparse.printMessage("\n" + this.description + "\n");
     }
     if (this.epilog != null && !this.epilog.isEmpty()) {
-      Argparse.printMessage("\n" + this.epilog);
+      Argparse.printMessage("\n" + this.epilog + "\n");
     }
   }
 
