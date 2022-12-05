@@ -69,6 +69,16 @@ class Argparse {
   private Map<Integer, ArgparseOption> optionsMap = null;
 
   /**
+   * We map the short and long options with each other so to easily find the short
+   * or the longer version of an argument given over the command-line.
+   * 
+   * These maps will also help us to quickly identify if the option given over the
+   * command-line is a valid argument or not.
+   */
+  private Map<String, String> shortToLongOptionsMap = null;
+  private Map<String, String> longToShortOptionsMap = null;
+
+  /**
    * We clone the system arguments in an instance variable so to later parse the
    * system arguments in a argument-to-value map.
    *
@@ -102,6 +112,9 @@ class Argparse {
     this.sysargs = sysargs.clone();
 
     this.optionsMap = new HashMap<Integer, ArgparseOption>();
+
+    this.shortToLongOptionsMap = new HashMap<String, String>();
+    this.longToShortOptionsMap = new HashMap<String, String>();
   }
 
   /**
@@ -116,9 +129,18 @@ class Argparse {
           "Both argparseOption.shortName and argparseOption.longName can't be empty.\n" +
               "You have to provide at least one of these.\n");
     }
-    this.optionsMap.put(argparseOption.longName != null || !argparseOption.longName.isEmpty()
+    this.optionsMap.put(argparseOption.longName != null && !argparseOption.longName.isEmpty()
         ? argparseOption.longName.hashCode()
         : argparseOption.shortName.hashCode(), argparseOption);
+
+    if (argparseOption.shortName != null && !argparseOption.shortName.isEmpty()) {
+      this.shortToLongOptionsMap.put(argparseOption.shortName,
+          !argparseOption.longName.isEmpty() ? argparseOption.longName : null);
+    }
+    if (argparseOption.longName != null && !argparseOption.longName.isEmpty()) {
+      this.longToShortOptionsMap.put(argparseOption.longName,
+          !argparseOption.shortName.isEmpty() ? argparseOption.shortName : null);
+    }
   }
 
   /**
@@ -239,6 +261,71 @@ class Argparse {
       formattedUsageString += "\n";
     }
     return formattedUsageString;
+  }
+
+  public void parse() {
+    if (this.sysargs.length == 1 && !this.optionsMap.isEmpty()) {
+      this.error("Expected arguments but none is given.");
+    }
+
+    final char argumentValueAssigner = '=';
+
+    /** Now iterate through the `sysargs` array and parse each argument. */
+    for (final String sysarg : this.sysargs) {
+      /**
+       * Check if the argument value assigner character is present in the argument. If
+       * yes then that means the argument holds a value otherwise, it may be a boolean
+       * type argument or it is missing a value.
+       */
+      if (sysarg.indexOf(argumentValueAssigner) > 0) {
+        /** Split the argument at '=' and separate argument with its value. */
+        String[] argumentValueArray = sysarg.split(String.format("%c", argumentValueAssigner));
+        String argument = argumentValueArray[0];
+        String value = argumentValueArray[1];
+
+        /**
+         * Now check if the argument is present in our options map.
+         *
+         * Assuming that the option given over the command line is a long option, we
+         * generates its hash code and look for that hash code inside of our options
+         * map. If we do not find anything there then we generate the hash code of its
+         * shorter version and look for that hash code inside of our options map.
+         * 
+         * If we find neither of these; we error out.
+         */
+        String argumentWithoutPrefix = argument.substring(2, argument.length());
+        if (this.optionsMap.containsKey(argumentWithoutPrefix.hashCode())) {
+          this.optionsMap.get(argumentWithoutPrefix.hashCode()).value = value;
+        } else if (this.optionsMap.containsKey(this.longToShortOptionsMap.get(argumentWithoutPrefix).hashCode())) {
+          this.optionsMap.get(this.longToShortOptionsMap.get(argumentWithoutPrefix).hashCode()).value = value;
+        } else {
+          this.error(String.format("Un-recognized argument %s.", argumentWithoutPrefix));
+        }
+      } else {
+        String argument = sysarg;
+        String argumentWithoutPrefix = argument.substring(2, argument.length());
+
+        /**
+         * We need to check if the given argument is of type boolean. If yes then mark
+         * its value true because of its presence, otherwise error out.
+         */
+        if (this.optionsMap.containsKey(argumentWithoutPrefix.hashCode())) {
+          if (this.optionsMap
+              .get(argumentWithoutPrefix.hashCode()).optionType != ArgparseOptionType.ARGPARSE_OPT_BOOLEAN) {
+            this.error(String.format("Expected a value for argument %s.", argumentWithoutPrefix));
+          }
+          this.optionsMap.get(argumentWithoutPrefix.hashCode()).value = "true";
+        } else if (this.optionsMap.containsKey(this.longToShortOptionsMap.get(argumentWithoutPrefix).hashCode())) {
+          if (this.optionsMap.get(this.longToShortOptionsMap.get(argumentWithoutPrefix)
+              .hashCode()).optionType != ArgparseOptionType.ARGPARSE_OPT_BOOLEAN) {
+            this.error(String.format("Expected a value for argument %s.", argumentWithoutPrefix));
+          }
+          this.optionsMap.get(this.longToShortOptionsMap.get(argumentWithoutPrefix).hashCode()).value = "true";
+        } else {
+          this.error(String.format("Un-recognized argument %s.", argumentWithoutPrefix));
+        }
+      }
+    }
   }
 
   /**
