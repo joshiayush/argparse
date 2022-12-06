@@ -268,6 +268,10 @@ class Argparse {
       this.error("Expected arguments but none is given.");
     }
 
+    /** Stores the already encountered group argument. */
+    String groupArgument = null;
+    boolean isGroupArgumentEncountered = false;
+
     final char argumentValueAssigner = '=';
 
     /** Now iterate through the `sysargs` array and parse each argument. */
@@ -295,8 +299,25 @@ class Argparse {
          */
         String argumentWithoutPrefix = argument.substring(2, argument.length());
         if (this.optionsMap.containsKey(argumentWithoutPrefix.hashCode())) {
+          if (this.optionsMap
+              .get(argumentWithoutPrefix.hashCode()).optionType == ArgparseOptionType.ARGPARSE_OPT_GROUP) {
+            if (isGroupArgumentEncountered) {
+              this.error(String.format("%s and %s is a part of group, hence can be used only one at a time.",
+                  groupArgument, argumentWithoutPrefix));
+            }
+            groupArgument = argumentWithoutPrefix;
+          }
           this.optionsMap.get(argumentWithoutPrefix.hashCode()).value = value;
         } else if (this.optionsMap.containsKey(this.longToShortOptionsMap.get(argumentWithoutPrefix).hashCode())) {
+          if (this.optionsMap
+              .get(this.longToShortOptionsMap.get(argumentWithoutPrefix)
+                  .hashCode()).optionType == ArgparseOptionType.ARGPARSE_OPT_GROUP) {
+            if (isGroupArgumentEncountered) {
+              this.error(String.format("%s and %s is a part of group, hence can be used only one at a time.",
+                  groupArgument, argumentWithoutPrefix));
+            }
+            groupArgument = argumentWithoutPrefix;
+          }
           this.optionsMap.get(this.longToShortOptionsMap.get(argumentWithoutPrefix).hashCode()).value = value;
         } else {
           this.error(String.format("Un-recognized argument %s.", argumentWithoutPrefix));
@@ -311,11 +332,28 @@ class Argparse {
          */
         if (this.optionsMap.containsKey(argumentWithoutPrefix.hashCode())) {
           if (this.optionsMap
+              .get(argumentWithoutPrefix.hashCode()).optionType == ArgparseOptionType.ARGPARSE_OPT_GROUP) {
+            if (isGroupArgumentEncountered) {
+              this.error(String.format("%s and %s is a part of group, hence can be used only one at a time.",
+                  groupArgument, argumentWithoutPrefix));
+            }
+            groupArgument = argumentWithoutPrefix;
+          }
+          if (this.optionsMap
               .get(argumentWithoutPrefix.hashCode()).optionType != ArgparseOptionType.ARGPARSE_OPT_BOOLEAN) {
             this.error(String.format("Expected a value for argument %s.", argumentWithoutPrefix));
           }
           this.optionsMap.get(argumentWithoutPrefix.hashCode()).value = "true";
         } else if (this.optionsMap.containsKey(this.longToShortOptionsMap.get(argumentWithoutPrefix).hashCode())) {
+          if (this.optionsMap
+              .get(this.longToShortOptionsMap.get(argumentWithoutPrefix)
+                  .hashCode()).optionType == ArgparseOptionType.ARGPARSE_OPT_GROUP) {
+            if (isGroupArgumentEncountered) {
+              this.error(String.format("%s and %s is a part of group, hence can be used only one at a time.",
+                  groupArgument, argumentWithoutPrefix));
+            }
+            groupArgument = argumentWithoutPrefix;
+          }
           if (this.optionsMap.get(this.longToShortOptionsMap.get(argumentWithoutPrefix)
               .hashCode()).optionType != ArgparseOptionType.ARGPARSE_OPT_BOOLEAN) {
             this.error(String.format("Expected a value for argument %s.", argumentWithoutPrefix));
