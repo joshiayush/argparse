@@ -42,7 +42,9 @@ package Argparse;
 
 import java.io.File;
 import java.util.Map;
+import java.util.List;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -141,6 +143,91 @@ class Argparse {
       this.longToShortOptionsMap.put(argparseOption.longName,
           !argparseOption.shortName.isEmpty() ? argparseOption.shortName : null);
     }
+  }
+
+  /**
+   * This function takes a string of text and wraps it to a specified width.
+   * It takes several optional parameters to handle whitespaces, newline
+   * characters, special characters, and indentation.
+   *
+   * @param text                             The string of text to be wrapped.
+   * @param width                            The maximum width of the wrapped
+   *                                         text.
+   * @param handleWhitespaces                A boolean flag to determine whether
+   *                                         leading and trailing whitespaces
+   *                                         should be removed from the text.
+   * @param handleNewLines                   A boolean flag to determine whether
+   *                                         newline characters in the text should
+   *                                         be handled.
+   * @param handleSpecialCharacters          A boolean flag to determine whether
+   *                                         special characters in the text should
+   *                                         be handled.
+   * @param specialCharacterHandlingStrategy A string indicating the strategy for
+   *                                         handling special characters, default
+   *                                         is console.
+   * @param indentNextLine                   A boolean flag to determine whether
+   *                                         the next line should be indented.
+   * @param indentationString                A string to be used as the
+   *                                         indentation.
+   *
+   * @return A list of strings, each representing a line of the wrapped text.
+   */
+  public static List<String> wrapText(String text, int width, boolean handleWhitespaces, boolean handleNewLines,
+      boolean handleSpecialCharacters, String specialCharacterHandlingStrategy, boolean indentNextLine,
+      String indentationString) throws Exception {
+    if (handleWhitespaces) {
+      text = text.trim();
+    }
+
+    if (handleSpecialCharacters) {
+      if (specialCharacterHandlingStrategy.equals("console")) {
+        text = text.replace("\t", "    ");
+      } else {
+        throw new Exception(String.format("Strategy %s is not supported", specialCharacterHandlingStrategy));
+      }
+    }
+
+    List<String> lines = new ArrayList<String>();
+    String[] words = text.split("\\s+");
+    String line = "";
+    int lastWordIndex = 0;
+    for (int i = 0; i < words.length; i++) {
+      if (handleNewLines && words[i].contains("\n")) {
+        lines.add(line);
+        lines.add(words[i].replace("\n", ""));
+        line = "";
+        lastWordIndex = i + 1;
+      } else if (line.length() + words[i].length() <= width) {
+        line += words[i] + " ";
+      } else if (words[i].length() > width) {
+        int j = 0;
+        while (j < words[i].length()) {
+          lines.add(line + words[i].substring(j, Math.min(j + width, words[i].length())));
+          j += width;
+        }
+        line = "";
+        lastWordIndex = i + 1;
+      } else {
+        lines.add(line);
+        line = words[i] + " ";
+        lastWordIndex = i;
+      }
+    }
+
+    if (handleWhitespaces) {
+      if (!line.isEmpty()) {
+        lines.add(line.trim());
+      }
+    } else {
+      lines.add(line);
+    }
+
+    if (indentNextLine) {
+      for (int i = lastWordIndex; i < lines.size(); i++) {
+        lines.set(i, indentationString + lines.get(i));
+      }
+    }
+    return lines;
   }
 
   /**
