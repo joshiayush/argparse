@@ -146,6 +146,31 @@ class Argparse {
   }
 
   /**
+   * This function takes a string of text with color encoders embedded in it and
+   * replaces the encoders with their corresponding ANSI escape codes for color
+   * formatting.
+   * The encoders are "@R", "@B", "@G" for Red, Blue, and Green respectively.
+   *
+   * @param text The string of text to be color formatted.
+   *
+   * @return A color formatted string with ANSI escape codes.
+   */
+  public static String colorEncodedString(String text) {
+    text = text.replaceAll("(?<!@)@R", "\033[0;31m");
+    text = text.replaceAll("(?<!@)@B", "\033[0;34m");
+    text = text.replaceAll("(?<!@)@G", "\033[0;32m");
+    // Reset the text color to its default.
+    text = text + "\033[0m";
+
+    // Replace all the double "@" characters with one because "@" character
+    // before itself makes it a escape sequence.
+    text = text.replaceAll("@@R", "@R");
+    text = text.replaceAll("@@B", "@B");
+    text = text.replaceAll("@@G", "@G");
+    return text;
+  }
+
+  /**
    * This function takes a string of text and wraps it to a specified width.
    * It takes several optional parameters to handle whitespaces, newline
    * characters, special characters, and indentation.
