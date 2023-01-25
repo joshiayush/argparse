@@ -34,6 +34,7 @@ package Argparse;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -161,6 +162,11 @@ class Argparse {
   public static class ArgparseOption {
     /** Most programs use this prefix. */
     private static final String DEFAULT_PREFIX = "--";
+
+    /**
+     * A default prefix length of two should be obeyed by all the programs using library `Argparse`.
+     */
+    public static final int DEFAULT_PREFIX_LENGTH = 2;
 
     public String prefix;
     public String shortName;
@@ -311,7 +317,13 @@ class Argparse {
     this.usage = usage;
     this.description = description;
     this.epilog = epilog;
-    this.sysargs = sysargs.clone();
+
+    String[] oldSysArgs = sysargs.clone();
+    /**
+     * Shitf the `sysargs` array by one position because we don't need the program name in our
+     * `sysargs` array when parsing command-line arguments.
+     */
+    this.sysargs = Arrays.copyOfRange(oldSysArgs, 1, oldSysArgs.length);
 
     this.optionsMap = new HashMap<Integer, ArgparseOption>();
 
@@ -361,11 +373,13 @@ class Argparse {
     text = text.replaceAll("(?<!@)@R", "\033[0;31m");
     text = text.replaceAll("(?<!@)@B", "\033[0;34m");
     text = text.replaceAll("(?<!@)@G", "\033[0;32m");
-    // Reset the text color to its default.
+    /** Reset the text color to its default. */
     text = text + "\033[0m";
 
-    // Replace all the double "@" characters with one because "@" character
-    // before itself makes it a escape sequence.
+    /**
+     * Replace all the double "@" characters with one because "@" character before itself makes it a
+     * escape sequence.
+     */
     text = text.replaceAll("@@R", "@R");
     text = text.replaceAll("@@B", "@B");
     text = text.replaceAll("@@G", "@G");
@@ -575,14 +589,35 @@ class Argparse {
     return formattedUsageString;
   }
 
+  /** Stores the already encountered group argument. */
+  String groupArgument = null;
+
+  /**
+   * Locks the argument as the group argument if the type of the option is `ARGPARSE_OPT_GROUP`.
+   *
+   * <p>This function calls the `error` method with a error message in case multiple group arguments
+   * are given over the command-line.
+   *
+   * @param groupArgument Assumed to be a group argument unless the type found out to be
+   *     `ARGPARSE_OPT_GROUP`.
+   */
+  private void lockIfGroupArgument(String groupArgument) {
+    if (this.optionsMap.get(groupArgument.hashCode()).optionType
+        == ArgparseOptionType.ARGPARSE_OPT_GROUP) {
+      if (this.groupArgument != null) {
+        this.error(
+            String.format(
+                "%s and %s is a part of group, hence can be used only one at a time.",
+                this.groupArgument, groupArgument));
+      }
+      this.groupArgument = groupArgument;
+    }
+  }
+
   public void parse() {
-    if (this.sysargs.length == 1 && !this.optionsMap.isEmpty()) {
+    if (this.sysargs.length == 0 && !this.optionsMap.isEmpty()) {
       this.error("Expected arguments but none is given.");
     }
-
-    /** Stores the already encountered group argument. */
-    String groupArgument = null;
-    boolean isGroupArgumentEncountered = false;
 
     final char argumentValueAssigner = '=';
 
@@ -595,9 +630,9 @@ class Argparse {
        */
       if (sysarg.indexOf(argumentValueAssigner) > 0) {
         /** Split the argument at '=' and separate argument with its value. */
-        String[] argumentValueArray = sysarg.split(String.format("%c", argumentValueAssigner));
-        String argument = argumentValueArray[0];
-        String value = argumentValueArray[1];
+        String[] argumentAndValueArray = sysarg.split(String.format("%c", argumentValueAssigner));
+        String argument = argumentAndValueArray[0];
+        String value = argumentAndValueArray[1];
 
         /**
          * Now check if the argument is present in our options map.
@@ -609,32 +644,14 @@ class Argparse {
          *
          * <p>If we find neither of these; we error out.
          */
-        String argumentWithoutPrefix = argument.substring(2, argument.length());
+        String argumentWithoutPrefix =
+            argument.substring(Argparse.ArgparseOption.DEFAULT_PREFIX_LENGTH, argument.length());
         if (this.optionsMap.containsKey(argumentWithoutPrefix.hashCode())) {
-          if (this.optionsMap.get(argumentWithoutPrefix.hashCode()).optionType
-              == ArgparseOptionType.ARGPARSE_OPT_GROUP) {
-            if (isGroupArgumentEncountered) {
-              this.error(
-                  String.format(
-                      "%s and %s is a part of group, hence can be used only one at a time.",
-                      groupArgument, argumentWithoutPrefix));
-            }
-            groupArgument = argumentWithoutPrefix;
-          }
+          this.lockIfGroupArgument(argumentWithoutPrefix);
           this.optionsMap.get(argumentWithoutPrefix.hashCode()).value = value;
         } else if (this.optionsMap.containsKey(
             this.longToShortOptionsMap.get(argumentWithoutPrefix).hashCode())) {
-          if (this.optionsMap.get(this.longToShortOptionsMap.get(argumentWithoutPrefix).hashCode())
-                  .optionType
-              == ArgparseOptionType.ARGPARSE_OPT_GROUP) {
-            if (isGroupArgumentEncountered) {
-              this.error(
-                  String.format(
-                      "%s and %s is a part of group, hence can be used only one at a time.",
-                      groupArgument, argumentWithoutPrefix));
-            }
-            groupArgument = argumentWithoutPrefix;
-          }
+          this.lockIfGroupArgument(this.longToShortOptionsMap.get(argumentWithoutPrefix));
           this.optionsMap.get(this.longToShortOptionsMap.get(argumentWithoutPrefix).hashCode())
                   .value =
               value;
@@ -643,23 +660,15 @@ class Argparse {
         }
       } else {
         String argument = sysarg;
-        String argumentWithoutPrefix = argument.substring(2, argument.length());
+        String argumentWithoutPrefix =
+            argument.substring(Argparse.ArgparseOption.DEFAULT_PREFIX_LENGTH, argument.length());
 
         /**
          * We need to check if the given argument is of type boolean. If yes then mark its value
          * true because of its presence, otherwise error out.
          */
         if (this.optionsMap.containsKey(argumentWithoutPrefix.hashCode())) {
-          if (this.optionsMap.get(argumentWithoutPrefix.hashCode()).optionType
-              == ArgparseOptionType.ARGPARSE_OPT_GROUP) {
-            if (isGroupArgumentEncountered) {
-              this.error(
-                  String.format(
-                      "%s and %s is a part of group, hence can be used only one at a time.",
-                      groupArgument, argumentWithoutPrefix));
-            }
-            groupArgument = argumentWithoutPrefix;
-          }
+          this.lockIfGroupArgument(argumentWithoutPrefix);
           if (this.optionsMap.get(argumentWithoutPrefix.hashCode()).optionType
               != ArgparseOptionType.ARGPARSE_OPT_BOOLEAN) {
             this.error(String.format("Expected a value for argument %s.", argumentWithoutPrefix));
@@ -667,17 +676,7 @@ class Argparse {
           this.optionsMap.get(argumentWithoutPrefix.hashCode()).value = "true";
         } else if (this.optionsMap.containsKey(
             this.longToShortOptionsMap.get(argumentWithoutPrefix).hashCode())) {
-          if (this.optionsMap.get(this.longToShortOptionsMap.get(argumentWithoutPrefix).hashCode())
-                  .optionType
-              == ArgparseOptionType.ARGPARSE_OPT_GROUP) {
-            if (isGroupArgumentEncountered) {
-              this.error(
-                  String.format(
-                      "%s and %s is a part of group, hence can be used only one at a time.",
-                      groupArgument, argumentWithoutPrefix));
-            }
-            groupArgument = argumentWithoutPrefix;
-          }
+          this.lockIfGroupArgument(this.longToShortOptionsMap.get(argumentWithoutPrefix));
           if (this.optionsMap.get(this.longToShortOptionsMap.get(argumentWithoutPrefix).hashCode())
                   .optionType
               != ArgparseOptionType.ARGPARSE_OPT_BOOLEAN) {
@@ -691,6 +690,26 @@ class Argparse {
         }
       }
     }
+  }
+
+  /**
+   * Returns the value of the argument given if present in the `optionsMap` hash map.
+   *
+   * <p>The value over the command-line for the given argument is returned by the function
+   * otherwise, a default value explicitly mentioned by the user is returned.
+   *
+   * @param argument The argument whose value is to be returned.
+   * @return Argument value.
+   */
+  public String getArgumentValue(String argument) {
+    if (this.longToShortOptionsMap.containsKey(argument)) {
+      final ArgparseOption option = this.optionsMap.get(argument.hashCode());
+      return option.value != null ? option.value : option.defaultValue;
+    } else if (this.shortToLongOptionsMap.containsKey(argument)) {
+      final ArgparseOption option = this.optionsMap.get(argument.hashCode());
+      return option.value != null ? option.value : option.defaultValue;
+    }
+    return null;
   }
 
   /**
