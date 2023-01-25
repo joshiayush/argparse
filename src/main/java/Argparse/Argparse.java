@@ -463,9 +463,7 @@ class Argparse {
    * their respective attributes.
    */
   private String formatUsage() {
-    int terminalWidth = OsUtils.getTerminalWidth();
-    if (terminalWidth < Argparse.DEFAULT_TERMINAL_WIDTH)
-      terminalWidth = Argparse.DEFAULT_TERMINAL_WIDTH;
+    int terminalWidth = Math.max(Argparse.DEFAULT_TERMINAL_WIDTH, OsUtils.getTerminalWidth());
 
     int usagePrognameSpace = "Usage: ".length() + this.progname.length() + 1;
     int formattedOptionsStringSpace = terminalWidth - usagePrognameSpace;
