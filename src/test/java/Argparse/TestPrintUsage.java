@@ -29,7 +29,7 @@ import java.io.PrintStream;
 import javax.management.InvalidAttributeValueException;
 import org.junit.Test;
 
-public class TestArgparse {
+public class TestPrintUsage {
   @Test
   public void testPrintUsageMethodWhenUsageIsGiven() {
     String programUsage = "Usage: foo foo\n";
@@ -59,7 +59,7 @@ public class TestArgparse {
   }
 
   @Test
-  public void testPrintUsageMethodWhenUsageIsNotGiven() {
+  public void testPrintUsageWhenUsageIsEmpty() {
     final Argparse parser = new Argparse(new String[] {"./foo.exe", "foo"}, null, "", "", "");
 
     try {
@@ -102,7 +102,75 @@ public class TestArgparse {
   }
 
   @Test
-  public void testPrintUsageMethodWhenDescriptionIsNotEmpty() {
+  public void testPrintUsageWhenMultipleOptionalArgumentsAreGiven() {
+    final Argparse parser =
+        new Argparse(new String[] {"./foo.exe", "foo", "bar"}, null, "", "", "");
+
+    try {
+      parser.addArgument(
+          new Argparse.ArgparseOption(
+              "f",
+              "foo",
+              Argparse.ArgparseOptionType.ARGPARSE_OPT_BOOLEAN,
+              null,
+              "false",
+              "Help text for foo."));
+      parser.addArgument(
+          new Argparse.ArgparseOption(
+              "b",
+              "bar",
+              Argparse.ArgparseOptionType.ARGPARSE_OPT_BOOLEAN,
+              null,
+              "false",
+              "Help text for bar."));
+      parser.addArgument(
+          new Argparse.ArgparseOption(
+              "bz",
+              "buzz",
+              Argparse.ArgparseOptionType.ARGPARSE_OPT_BOOLEAN,
+              null,
+              "false",
+              "Help text for buzz."));
+    } catch (InvalidAttributeValueException exc) {
+      System.err.println(exc.toString());
+    }
+
+    final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+    System.setOut(new PrintStream(outStream));
+
+    parser.printUsage();
+
+    System.setOut(null);
+    final String capturedStdout = outStream.toString();
+
+    final int initialpad = 4;
+    String expectedProgramUsage = "Usage: foo [-b][-f][-bz]\n";
+    expectedProgramUsage += "\n";
+    expectedProgramUsage += new String(new char[initialpad]).replace("\0", " ");
+    expectedProgramUsage += "-b, --bar=<BOOL>\n";
+    expectedProgramUsage += new String(new char[initialpad << 2]).replace("\0", " ");
+    expectedProgramUsage += "Help text for bar.\n";
+    expectedProgramUsage += new String(new char[initialpad]).replace("\0", " ");
+    expectedProgramUsage += "-f, --foo=<BOOL>\n";
+    expectedProgramUsage += new String(new char[initialpad << 2]).replace("\0", " ");
+    expectedProgramUsage += "Help text for foo.\n";
+    expectedProgramUsage += new String(new char[initialpad]).replace("\0", " ");
+    expectedProgramUsage += "-bz, --buzz=<BOOL>\n";
+    expectedProgramUsage += new String(new char[initialpad << 2]).replace("\0", " ");
+    expectedProgramUsage += "Help text for buzz.\n";
+
+    /**
+     * Two extra new-line characters for the trailing end-of-line character appended by the
+     * `printUsage()` function at the end of the usage and the `formatUsage()` function at the end
+     * of every option string.
+     */
+    expectedProgramUsage += "\n";
+
+    assertEquals(expectedProgramUsage, capturedStdout);
+  }
+
+  @Test
+  public void testPrintUsageWhenDescriptionIsGiven() {
     String programDescription = "argparse version 1.0.0\n";
     programDescription +=
         "Post bug reports here at https://github.com/joshiayush/argparse/issues/new";
@@ -153,7 +221,7 @@ public class TestArgparse {
   }
 
   @Test
-  public void testPrintUsageMethodWhenDescriptionAndEpilogIsNotEmpty() {
+  public void testPrintUsageWhenDescriptionAndEpilogIsGiven() {
     String programDescription = "argparse version 1.0.0\n";
     programDescription +=
         "Post bug reports here at https://github.com/joshiayush/argparse/issues/new";
