@@ -26,7 +26,9 @@ package Argparse;
  *
  * <p>This module is an optparse-inspired command-line parsing library that:
  *
- * <p>* handles both optional and positional arguments * produces highly informative usage messages
+ * <p>* handles both optional and positional arguments
+ *
+ * <p>* produces highly informative usage messages
  */
 import java.io.File;
 import java.io.IOException;
@@ -611,6 +613,17 @@ class Argparse {
     }
   }
 
+  /**
+   * The `parse()` function is responsible for parsing the command line arguments provided to the
+   * program. It first checks if any arguments have been provided and if so, it iterates through
+   * them. If an argument contains an equal sign, it splits the argument into the argument name and
+   * value, and then looks for the corresponding option in the `optionsMap`. If it finds a match, it
+   * assigns the value to the option's value attribute. If the argument does not contain an equal
+   * sign, it checks if the option is a `boolean` type. If it is, it assigns the value "true" to the
+   * option's value attribute, otherwise it errors out. If the argument is not recognized, it also
+   * errors out. The function locks the current group argument if it exists before setting the
+   * value.
+   */
   public void parse() {
     if (this.sysargs.length == 0 && !this.optionsMap.isEmpty()) {
       this.error("Expected arguments but none is given.");
