@@ -53,7 +53,7 @@ public class TestPrintUsage {
      * An extra new-line character for the trailing end-of-line character appended by the
      * `printUsage()` function at the end of the usage.
      */
-    final String expectedProgramUsage = programUsage + "\n";
+    final String expectedProgramUsage = programUsage + "\n" + "\033[0m";
 
     assertEquals(expectedProgramUsage, capturedStdout);
   }
@@ -96,7 +96,7 @@ public class TestPrintUsage {
      * `printUsage()` function at the end of the usage and the `formatUsage()` function at the end
      * of every option string.
      */
-    expectedProgramUsage += "\n\n";
+    expectedProgramUsage += "\n\n" + "\033[0m";
 
     assertEquals(expectedProgramUsage, capturedStdout);
   }
@@ -164,7 +164,7 @@ public class TestPrintUsage {
      * `printUsage()` function at the end of the usage and the `formatUsage()` function at the end
      * of every option string.
      */
-    expectedProgramUsage += "\n";
+    expectedProgramUsage += "\n" + "\033[0m";
 
     assertEquals(expectedProgramUsage, capturedStdout);
   }
@@ -213,9 +213,9 @@ public class TestPrintUsage {
      * of every option string and the end-of-line character before printing the description in
      * `printUsage()` function.
      */
-    expectedProgramUsage += "\n\n\n";
+    expectedProgramUsage += "\n\n" + "\033[0m" + "\n";
     expectedProgramUsage += programDescription;
-    expectedProgramUsage += "\n";
+    expectedProgramUsage += "\n" + "\033[0m";
 
     assertEquals(expectedProgramUsage, capturedStdout);
   }
@@ -267,13 +267,13 @@ public class TestPrintUsage {
      * of every option string and the end-of-line character before printing the description in
      * `printUsage()` function.
      */
-    expectedProgramUsage += "\n\n\n";
+    expectedProgramUsage += "\n\n" + "\033[0m" + "\n";
     expectedProgramUsage += programDescription;
-    expectedProgramUsage += "\n";
+    expectedProgramUsage += "\n" + "\033[0m";
 
     expectedProgramUsage += "\n";
     expectedProgramUsage += programEpilog;
-    expectedProgramUsage += "\n";
+    expectedProgramUsage += "\n" + "\033[0m";
 
     assertEquals(expectedProgramUsage, capturedStdout);
   }
